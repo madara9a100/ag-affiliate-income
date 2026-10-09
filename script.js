@@ -1,256 +1,263 @@
 
-const STAR_TECH_URL = "https://www.startech.com.bd/";
+"use strict";
 
-const products = [
-  { id: 1, name: "Laptop", category: "Laptop", icon: "💻", url: "" },
-  { id: 2, name: "Gaming Accessories", category: "Gaming", icon: "🎮", url: "" },
-  { id: 3, name: "Smartphone", category: "Phone", icon: "📱", url: "" },
-  { id: 4, name: "Monitor", category: "Monitor", icon: "🖥️", url: "" },
-  { id: 5, name: "Camera", category: "Camera", icon: "📷", url: "" },
-  { id: 6, name: "Computer Accessories", category: "Accessories", icon: "🔌", url: "" },
-  { id: 7, name: "Desktop PC", category: "Desktop", icon: "🖥️", url: "" },
-  { id: 8, name: "Networking Device", category: "Networking", icon: "📡", url: "" }
+// Replace these two values with your own Supabase project details.
+const SUPABASE_URL = "YOUR_SUPABASE_URL";
+const SUPABASE_PUBLISHABLE_KEY = "YOUR_SUPABASE_PUBLISHABLE_KEY";
+
+const client = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
+
+const $ = (id) => document.getElementById(id);
+
+const authPanel = $("auth-panel");
+const dashboard = $("dashboard");
+const message = $("message");
+const forms = [
+  "login-form",
+  "register-form",
+  "forgot-form",
+  "reset-form"
 ];
 
-const categories = [
-  ["💻", "Laptop"],
-  ["🖥️", "Desktop"],
-  ["🎮", "Gaming"],
-  ["📱", "Phone"],
-  ["🖥️", "Monitor"],
-  ["📷", "Camera"],
-  ["🔌", "Accessories"],
-  ["📡", "Networking"],
-  ["📺", "TV"],
-  ["🔋", "Components"]
-];
+let busy = false;
 
-let activeCategory = "All";
-let savedLinks = [];
+function showMessage(text, type = "") {
+  message.textContent = text;
+  message.className = type;
+}
 
-function showPage(page) {
-  document.querySelectorAll(".page").forEach(element => {
-    element.classList.remove("active");
+function showForm(formId) {
+  forms.forEach((id) => {
+    $(id).hidden = id !== formId;
   });
 
-  const target = document.getElementById(page);
-  if (target) target.classList.add("active");
+  $("login-tab").classList.toggle("active", formId === "login-form");
+  $("register-tab").classList.toggle("active", formId === "register-form");
 
-  document.querySelectorAll(".nav").forEach(element => {
-    element.classList.toggle("active", element.dataset.page === page);
-  });
-
-  if (page === "products") renderProducts();
-
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  showMessage("");
 }
 
-function renderChips() {
-  const container = document.getElementById("product-chips");
-  if (!container) return;
-
-  const names = ["All", ...new Set(products.map(product => product.category))];
-
-  container.innerHTML = names.map(name => `
-    <button class="chip ${name === activeCategory ? "active" : ""}"
-      onclick="setCategory('${name}')">${name}</button>
-  `).join("");
+function showDashboard(user) {
+  authPanel.hidden = true;
+  dashboard.hidden = false;
+  $("user-name").textContent =
+    user.user_metadata?.full_name || "Member";
+  $("user-email").textContent = user.email || "Not available";
+  $("user-id").textContent = user.id;
 }
 
-function setCategory(category) {
-  activeCategory = category;
-  renderChips();
-  renderProducts();
-  showPage("products");
+function showAuthentication() {
+  dashboard.hidden = true;
+  authPanel.hidden = false;
 }
 
-function renderProducts() {
-  const list = document.getElementById("product-list");
-  if (!list) return;
+function readableError(error) {
+  const text = String(error?.message || "Something went wrong.");
 
-  const search = (
-    document.getElementById("search")?.value || ""
-  ).toLowerCase();
+  if (/invalid login credentials/i.test(text)) {
+    return "Email or password is incorrect.";
+  }
+  if (/email not confirmed/i.test(text)) {
+    return "Please verify your email using the confirmation link.";
+  }
+  if (/password should be at least/i.test(text)) {
+    return "Choose a longer password.";
+  }
 
-  const filtered = products.filter(product =>
-    (activeCategory === "All" || product.category === activeCategory) &&
-    (product.name.toLowerCase().includes(search) ||
-     product.category.toLowerCase().includes(search))
-  );
+  return text;
+}
 
-  if (filtered.length === 0) {
-    list.innerHTML = '<div class="empty">No matching products found.</div>';
+async function withBusy(button, action) {
+  if (busy) return;
+
+  busy = true;
+  const oldText = button.textContent;
+  button.disabled = true;
+  button.textContent = "Please wait...";
+
+  try {
+    await action();
+  } catch (error) {
+    showMessage(readableError(error), "error");
+  } finally {
+    busy = false;
+    button.disabled = false;
+    button.textContent = oldText;
+  }
+}
+
+$("login-tab").addEventListener("click", () => showForm("login-form"));
+$("register-tab").addEventListener("click", () => showForm("register-form"));
+$("forgot-link").addEventListener("click", () => showForm("forgot-form"));
+
+document.querySelectorAll(".back-login").forEach((button) => {
+  button.addEventListener("click", () => showForm("login-form"));
+});
+
+$("register-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const name = $("reg-name").value.trim();
+  const email = $("reg-email").value.trim();
+  const password = $("reg-password").value;
+  const confirm = $("reg-confirm").value;
+  const button = event.submitter;
+
+  if (password !== confirm) {
+    showMessage("Passwords do not match.", "error");
     return;
   }
 
-  list.innerHTML = filtered.map(product => `
-    <article class="card product">
-      <div class="product-art">${product.icon}</div>
-      <div class="product-info">
-        <h3>${product.name}</h3>
-        <div class="muted">${product.category}</div>
-        <div class="price">Price: Not verified</div>
-        <div class="status unknown">● Stock status unavailable</div>
-        <button class="btn" onclick="productDetails(${product.id})">
-          Open Product
-        </button>
-        <button class="btn secondary" onclick="saveLink(${product.id})">
-          🔗 Get Affiliate Link
-        </button>
-        <button class="btn secondary" onclick="shareProduct(${product.id})">
-          Share Product
-        </button>
-      </div>
-    </article>
-  `).join("");
-}
+  if (password.length < 8) {
+    showMessage("Password must be at least 8 characters.", "error");
+    return;
+  }
 
-function renderCategories() {
-  const container = document.getElementById("category-grid");
-  if (!container) return;
+  await withBusy(button, async () => {
+    const { data, error } = await client.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name },
+        emailRedirectTo: window.location.origin +
+          window.location.pathname
+      }
+    });
 
-  container.innerHTML = categories.map(([icon, name]) => `
-    <button class="tile" onclick="setCategory('${name}')">
-      <span class="emoji">${icon}</span>
-      <strong>${name}</strong>
-      <small>Browse category</small>
-    </button>
-  `).join("");
-}
+    if (error) throw error;
 
-function productDetails(id) {
-  const product = products.find(item => item.id === id);
-  if (!product) return;
+    if (data.session) {
+      showMessage("Account created successfully.", "success");
+    } else {
+      showMessage(
+        "Registration received. Check your email and click the confirmation link before logging in.",
+        "success"
+      );
+      $("register-form").reset();
+    }
+  });
+});
 
-  alert(
-    product.name +
-    "\n\nCategory: " + product.category +
-    "\nPrice: Not verified" +
-    "\nAvailability: Not verified" +
-    "\n\nA verified product URL is needed for product-specific details."
-  );
-}
+$("login-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
 
-function saveLink(id) {
-  const product = products.find(item => item.id === id);
-  if (!product) return;
+  const email = $("login-email").value.trim();
+  const password = $("login-password").value;
+  const button = event.submitter;
 
-  if (!product.url) {
-    alert(
-      "No verified affiliate link is configured for this item yet.\n\n" +
-      "Add the correct tracking link from your Star Tech affiliate account first."
+  await withBusy(button, async () => {
+    const { data, error } = await client.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw error;
+
+    if (data.user) showDashboard(data.user);
+  });
+});
+
+$("forgot-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const email = $("forgot-email").value.trim();
+  const button = event.submitter;
+
+  await withBusy(button, async () => {
+    const { error } = await client.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + window.location.pathname
+    });
+
+    if (error) throw error;
+
+    showMessage(
+      "If an account exists for that email, a reset link will be sent. Check your inbox.",
+      "success"
+    );
+  });
+});
+
+$("reset-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  const password = $("new-password").value;
+  const confirm = $("new-confirm").value;
+  const button = event.submitter;
+
+  if (password !== confirm) {
+    showMessage("Passwords do not match.", "error");
+    return;
+  }
+
+  await withBusy(button, async () => {
+    const { error } = await client.auth.updateUser({ password });
+    if (error) throw error;
+
+    showMessage("Password updated. You can now log in.", "success");
+    await client.auth.signOut();
+    showForm("login-form");
+    showMessage("Password updated. Please log in.", "success");
+  });
+});
+
+$("logout-button").addEventListener("click", async () => {
+  const { error } = await client.auth.signOut();
+
+  if (error) {
+    showMessage(readableError(error), "error");
+    return;
+  }
+
+  showAuthentication();
+  showForm("login-form");
+  showMessage("You have logged out.", "success");
+});
+
+// Password recovery links return to this page with a recovery session.
+client.auth.onAuthStateChange((event, session) => {
+  if (event === "PASSWORD_RECOVERY") {
+    showAuthentication();
+    showForm("reset-form");
+    showMessage("Enter and confirm your new password.", "success");
+    return;
+  }
+
+  if (session?.user) {
+    showDashboard(session.user);
+  } else {
+    showAuthentication();
+  }
+});
+
+// Restore an existing login session when the page opens.
+(async function init() {
+  showAuthentication();
+
+  if (
+    SUPABASE_URL.includes("YOUR_SUPABASE") ||
+    SUPABASE_PUBLISHABLE_KEY.includes("YOUR_SUPABASE")
+  ) {
+    showForm("login-form");
+    showMessage(
+      "Setup required: add your Supabase URL and Publishable key in script.js.",
+      "error"
     );
     return;
   }
 
-  if (!savedLinks.some(item => item.id === id)) {
-    savedLinks.push(product);
-  }
+  const { data, error } = await client.auth.getSession();
 
-  renderSavedLinks();
-  alert("Link saved for this session.");
-}
-
-function renderSavedLinks() {
-  const container = document.getElementById("saved-links");
-  if (!container) return;
-
-  if (savedLinks.length === 0) {
-    container.innerHTML = '<div class="empty">No links saved yet.</div>';
+  if (error) {
+    showMessage(readableError(error), "error");
     return;
   }
 
-  container.innerHTML = savedLinks.map(product => `
-    <div class="list-item">
-      <strong>${product.name}</strong>
-      <div class="muted">${product.url}</div>
-      <button class="btn secondary" onclick="copyLink(${product.id})">
-        Copy Link
-      </button>
-    </div>
-  `).join("");
-}
-
-async function copyLink(id) {
-  const product = savedLinks.find(item => item.id === id);
-  if (!product) return;
-
-  try {
-    await navigator.clipboard.writeText(product.url);
-    alert("Link copied.");
-  } catch {
-    prompt("Copy your link:", product.url);
-  }
-}
-
-function shareProduct(id) {
-  const product = products.find(item => item.id === id);
-  if (!product) return;
-
-  const url = product.url || STAR_TECH_URL;
-  const text = product.name + " — Check Star Tech: " + url;
-
-  if (navigator.share) {
-    navigator.share({
-      title: product.name,
-      text: text,
-      url: url
-    }).catch(() => {});
+  if (data.session?.user) {
+    showDashboard(data.session.user);
   } else {
-    prompt("Copy and share this text:", text);
+    showForm("login-form");
   }
-}
-
-function shareApp() {
-  const url = window.location.href;
-
-  if (navigator.share) {
-    navigator.share({
-      title: "AG Affiliate Income",
-      text: "Explore AG Affiliate Income",
-      url: url
-    }).catch(() => {});
-  } else {
-    prompt("Copy your Mini App URL:", url);
-  }
-}
-
-function openStarTech() {
-  window.open(STAR_TECH_URL, "_blank", "noopener,noreferrer");
-}
-
-function initTelegram() {
-  const telegram = window.Telegram?.WebApp;
-  if (!telegram) return;
-
-  telegram.ready();
-  telegram.expand();
-
-  const user = telegram.initDataUnsafe?.user;
-  if (!user) return;
-
-  const nameElement = document.getElementById("profile-name");
-  const usernameElement = document.getElementById("profile-username");
-  const idElement = document.getElementById("profile-id");
-
-  if (nameElement) {
-    nameElement.textContent =
-      [user.first_name, user.last_name].filter(Boolean).join(" ") ||
-      "Telegram User";
-  }
-
-  if (usernameElement) {
-    usernameElement.textContent = user.username
-      ? "@" + user.username
-      : "Not set";
-  }
-
-  if (idElement) {
-    idElement.textContent = user.id ? String(user.id) : "Unavailable";
-  }
-}
-
-renderChips();
-renderProducts();
-renderCategories();
-initTelegram();
+})();
