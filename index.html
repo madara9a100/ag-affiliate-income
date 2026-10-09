@@ -1,0 +1,558 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#06172b">
+  <title>AG Affiliate Income</title>
+
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <style>
+    :root {
+      --bg: #06172b;
+      --card: #0d2743;
+      --card2: #102f50;
+      --blue: #218cff;
+      --cyan: #00d9ff;
+      --green: #10d98b;
+      --gold: #ffc928;
+      --text: #f5f8ff;
+      --muted: #91a7c2;
+      --border: #173b5c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+      padding-bottom: 85px;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .top {
+      padding: 22px 16px 15px;
+      background: linear-gradient(135deg, #0d2743, #06172b);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo {
+      width: 48px;
+      height: 48px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, var(--blue), var(--cyan));
+      color: #041326;
+      font-weight: 900;
+      font-size: 21px;
+    }
+
+    h1 { font-size: 19px; margin: 0 0 5px; }
+    .sub { color: var(--muted); font-size: 12px; }
+
+    .wrap { padding: 16px; max-width: 700px; margin: auto; }
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .welcome {
+      background: linear-gradient(130deg, #104e83, #34246f);
+      padding: 20px;
+      border-radius: 20px;
+      margin-bottom: 17px;
+    }
+
+    .welcome h2 { margin: 0 0 8px; font-size: 22px; }
+    .welcome p { color: #d2e7ff; font-size: 13px; line-height: 1.5; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 14px 0 22px;
+    }
+
+    .stat, .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 15px;
+      min-width: 0;
+    }
+
+    .stat .num { font-size: 21px; font-weight: 800; margin: 8px 0; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .green { color: var(--green); }
+    .gold { color: var(--gold); }
+
+    h2.section-title { font-size: 17px; margin: 22px 0 12px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+
+    .tile {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 16px 10px;
+      border-radius: 15px;
+      text-align: left;
+    }
+
+    .tile .emoji { font-size: 25px; display: block; margin-bottom: 10px; }
+    .tile strong { font-size: 13px; }
+    .tile small { display: block; color: var(--muted); margin-top: 6px; font-size: 11px; }
+
+    .search {
+      width: 100%;
+      padding: 13px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      margin: 12px 0;
+      outline: none;
+    }
+
+    .chips { display: flex; gap: 8px; overflow-x: auto; padding: 3px 0 12px; }
+    .chip {
+      white-space: nowrap;
+      padding: 9px 12px;
+      border-radius: 20px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 12px;
+    }
+    .chip.active { background: var(--blue); border-color: var(--blue); }
+
+    .product {
+      overflow: hidden;
+      padding: 0;
+      margin-bottom: 12px;
+    }
+
+    .product-art {
+      min-height: 100px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, #12395d, #15294d);
+      font-size: 48px;
+    }
+
+    .product-info { padding: 14px; }
+    .product-info h3 { margin: 0 0 8px; font-size: 15px; }
+    .price { color: var(--cyan); font-size: 17px; font-weight: bold; margin: 10px 0; }
+    .status { color: var(--green); font-size: 11px; }
+    .status.unknown { color: var(--gold); }
+
+    .btn {
+      border: 0;
+      border-radius: 10px;
+      background: var(--blue);
+      color: white;
+      padding: 11px 13px;
+      font-weight: bold;
+      width: 100%;
+      margin-top: 8px;
+    }
+
+    .btn.secondary { background: var(--card2); border: 1px solid var(--border); }
+    .btn.green-btn { background: #087c58; }
+
+    .row-between { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .row-between h2 { font-size: 19px; }
+
+    .list-item {
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+    .list-item:last-child { border-bottom: 0; }
+
+    .notice {
+      padding: 12px;
+      border-radius: 12px;
+      background: #332b14;
+      color: #ffe8a0;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: 14px;
+    }
+
+    .empty { text-align: center; padding: 25px 10px; color: var(--muted); }
+
+    .bottom {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 5;
+      background: #081d33;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      padding: 9px 2px calc(9px + env(safe-area-inset-bottom));
+    }
+
+    .nav {
+      color: var(--muted);
+      background: none;
+      border: 0;
+      font-size: 10px;
+      padding: 4px;
+      min-width: 55px;
+    }
+    .nav span { display: block; font-size: 20px; margin-bottom: 4px; }
+    .nav.active { color: var(--cyan); }
+
+    @media (min-width: 520px) {
+      .stats { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .products-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .products-grid .product { margin-bottom: 0; }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="top">
+    <div class="brand">
+      <div class="logo">AG</div>
+      <div>
+        <h1>AG Affiliate Income</h1>
+        <div class="sub">SHOP • SHARE • EARN</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="page active" id="home">
+      <div class="welcome">
+        <h2>Welcome to AG Universe! 🚀</h2>
+        <p>Explore products, share affiliate links and track your verified earnings in one place.</p>
+        <button class="btn" onclick="showPage('products')">🛒 Explore Products</button>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><div class="muted">Total Commission</div><div class="num">—</div><div class="muted">Connect real data</div></div>
+        <div class="stat"><div class="muted">Pending</div><div class="num">—</div><div class="muted">Not connected</div></div>
+        <div class="stat"><div class="muted">Orders</div><div class="num">—</div><div class="muted">Affiliate report</div></div>
+        <div class="stat"><div class="muted">Link Clicks</div><div class="num">—</div><div class="muted">Tracking required</div></div>
+      </div>
+
+      <h2 class="section-title">Explore AG</h2>
+      <div class="grid">
+        <button class="tile" onclick="showPage('products')"><span class="emoji">🛒</span><strong>View Products</strong><small>Browse the catalog</small></button>
+        <button class="tile" onclick="showPage('categories')"><span class="emoji">📂</span><strong>Categories</strong><small>Find your interests</small></button>
+        <button class="tile" onclick="showPage('deals')"><span class="emoji">🔥</span><strong>Hot Deals</strong><small>Offers need verification</small></button>
+        <button class="tile" onclick="showPage('links')"><span class="emoji">🔗</span><strong>My Links</strong><small>Your saved links</small></button>
+      </div>
+
+      <div class="notice">Demo UI only. Earnings, stock and orders are not connected yet. No commission is guaranteed.</div>
+    </section>
+
+    <section class="page" id="products">
+      <div class="row-between"><h2>🛒 Products</h2><span class="muted">Catalog demo</span></div>
+      <input class="search" id="search" placeholder="🔎 Search products..." oninput="renderProducts()">
+      <div class="chips" id="product-chips"></div>
+      <div class="products-grid" id="product-list"></div>
+      <div class="notice">Product examples are placeholders, not verified Star Tech inventory or prices.</div>
+    </section>
+
+    <section class="page" id="categories">
+      <h2 class="section-title">📂 Categories</h2>
+      <div class="grid" id="category-grid"></div>
+    </section>
+
+    <section class="page" id="deals">
+      <h2 class="section-title">🔥 Hot Deals</h2>
+      <div class="card">
+        <div style="font-size:32px">🏷️</div>
+        <h3>Latest Star Tech Offers</h3>
+        <p class="muted">Live discounts are not connected yet. Check the official store before sharing an offer.</p>
+        <button class="btn" onclick="openStarTech()">Visit Star Tech</button>
+      </div>
+    </section>
+
+    <section class="page" id="orders">
+      <h2 class="section-title">🛍️ Orders</h2>
+      <div class="card">
+        <div class="empty">📦<p>No verified order data connected.</p></div>
+        <p class="muted">Order status and commission must come from your affiliate account report or an authorized integration.</p>
+      </div>
+    </section>
+
+    <section class="page" id="links">
+      <h2 class="section-title">🔗 My Links</h2>
+      <div class="card">
+        <div id="saved-links"><div class="empty">No links saved in this session.</div></div>
+        <button class="btn secondary" onclick="showPage('products')">Browse Products</button>
+      </div>
+    </section>
+
+    <section class="page" id="earnings">
+      <h2 class="section-title">💰 Earnings</h2>
+      <div class="card">
+        <div class="list-item">Total commission: <strong>Not connected</strong></div>
+        <div class="list-item">Pending commission: <strong>Not connected</strong></div>
+        <div class="list-item">Approved commission: <strong>Not connected</strong></div>
+        <div class="list-item">Paid commission: <strong>Not connected</strong></div>
+        <p class="muted">Use verified transaction history from your Star Tech affiliate account for real figures.</p>
+      </div>
+    </section>
+
+    <section class="page" id="referral">
+      <h2 class="section-title">🤝 Referral</h2>
+      <div class="card">
+        <p>Invite people to use AG Affiliate Income.</p>
+        <p class="muted">A referral reward system is not configured yet.</p>
+        <button class="btn" onclick="shareApp()">Share Mini App</button>
+      </div>
+    </section>
+
+    <section class="page" id="profile">
+      <h2 class="section-title">👤 Profile</h2>
+      <div class="card">
+        <div class="list-item">Name: <strong id="profile-name">Telegram User</strong></div>
+        <div class="list-item">Username: <strong id="profile-username">Not available</strong></div>
+        <div class="list-item">Telegram ID: <strong id="profile-id">Available in Telegram</strong></div>
+        <div class="list-item">Affiliate status: <strong>Not connected</strong></div>
+      </div>
+    </section>
+
+    <section class="page" id="settings">
+      <h2 class="section-title">⚙️ Settings</h2>
+      <div class="card">
+        <div class="list-item">🔔 Notifications <span class="muted">Not configured</span></div>
+        <div class="list-item">🌐 Language <span class="muted">English</span></div>
+        <div class="list-item">🔐 Privacy <span class="muted">See privacy policy before launch</span></div>
+        <button class="btn secondary" onclick="showPage('help')">Help & Support</button>
+      </div>
+    </section>
+
+    <section class="page" id="help">
+      <h2 class="section-title">ℹ️ Help</h2>
+      <div class="card">
+        <h3>How affiliate income works</h3>
+        <p class="muted">1. Select a product.</p>
+        <p class="muted">2. Use your authorized affiliate tracking link.</p>
+        <p class="muted">3. Share it with interested buyers.</p>
+        <p class="muted">4. Check the affiliate dashboard for eligible orders and approved commission.</p>
+        <div class="notice">A click or purchase does not guarantee commission. Store rules and order eligibility apply.</div>
+        <button class="btn" onclick="openStarTech()">Open Star Tech</button>
+      </div>
+    </section>
+  </main>
+
+  <nav class="bottom">
+    <button class="nav active" data-page="home" onclick="showPage('home')"><span>🏠</span>Home</button>
+    <button class="nav" data-page="products" onclick="showPage('products')"><span>🛒</span>Products</button>
+    <button class="nav" data-page="categories" onclick="showPage('categories')"><span>📂</span>Categories</button>
+    <button class="nav" data-page="links" onclick="showPage('links')"><span>🔗</span>My Links</button>
+    <button class="nav" data-page="profile" onclick="showPage('profile')"><span>👤</span>Profile</button>
+  </nav>
+
+  <script>
+    const STAR_TECH_URL = "https://www.startech.com.bd/";
+
+    // These are illustrative UI entries, not real store inventory.
+    const products = [
+      {id:1, name:"Laptop", category:"Laptop", icon:"💻", price:null, url:""},
+      {id:2, name:"Gaming Accessories", category:"Gaming", icon:"🎮", price:null, url:""},
+      {id:3, name:"Smartphone", category:"Phone", icon:"📱", price:null, url:""},
+      {id:4, name:"Monitor", category:"Monitor", icon:"🖥️", price:null, url:""},
+      {id:5, name:"Camera", category:"Camera", icon:"📷", price:null, url:""},
+      {id:6, name:"Computer Accessories", category:"Accessories", icon:"🔌", price:null, url:""},
+      {id:7, name:"Desktop PC", category:"Desktop", icon:"🖥️", price:null, url:""},
+      {id:8, name:"Networking Device", category:"Networking", icon:"📡", price:null, url:""}
+    ];
+
+    const categories = [
+      ["💻","Laptop"],["🖥️","Desktop"],["🎮","Gaming"],["📱","Phone"],
+      ["🖥️","Monitor"],["📷","Camera"],["🔌","Accessories"],
+      ["📡","Networking"],["📺","TV"],["🔋","Components"]
+    ];
+
+    let activeCategory = "All";
+    let savedLinks = [];
+
+    function showPage(page) {
+      document.querySelectorAll(".page").forEach(el => el.classList.remove("active"));
+      const target = document.getElementById(page);
+      if (target) target.classList.add("active");
+
+      document.querySelectorAll(".nav").forEach(el => {
+        el.classList.toggle("active", el.dataset.page === page);
+      });
+
+      if (page === "products") renderProducts();
+      window.scrollTo({top:0, behavior:"smooth"});
+    }
+
+    function renderChips() {
+      const names = ["All", ...new Set(products.map(p => p.category))];
+      document.getElementById("product-chips").innerHTML = names.map(name =>
+        `<button class="chip ${name === activeCategory ? "active" : ""}"
+          onclick="setCategory('${name}')">${name}</button>`
+      ).join("");
+    }
+
+    function setCategory(category) {
+      activeCategory = category;
+      renderChips();
+      renderProducts();
+      showPage("products");
+    }
+
+    function renderProducts() {
+      const search = (document.getElementById("search")?.value || "").toLowerCase();
+      const filtered = products.filter(p =>
+        (activeCategory === "All" || p.category === activeCategory) &&
+        (p.name.toLowerCase().includes(search) || p.category.toLowerCase().includes(search))
+      );
+
+      const list = document.getElementById("product-list");
+      if (!filtered.length) {
+        list.innerHTML = '<div class="empty">No matching products found.</div>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(p => `
+        <article class="card product">
+          <div class="product-art">${p.icon}</div>
+          <div class="product-info">
+            <h3>${p.name}</h3>
+            <div class="muted">${p.category}</div>
+            <div class="price">Price: Not verified</div>
+            <div class="status unknown">● Stock status unavailable</div>
+            <button class="btn" onclick="productDetails(${p.id})">Open Product</button>
+            <button class="btn secondary" onclick="saveLink(${p.id})">🔗 Save / Get Link</button>
+            <button class="btn secondary" onclick="shareProduct(${p.id})">Share Product</button>
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function renderCategories() {
+      document.getElementById("category-grid").innerHTML = categories.map(([icon,name]) => `
+        <button class="tile" onclick="setCategory('${name}')">
+          <span class="emoji">${icon}</span><strong>${name}</strong>
+          <small>Browse category</small>
+        </button>
+      `).join("");
+    }
+
+    function productDetails(id) {
+      const p = products.find(item => item.id === id);
+      if (!p) return;
+      alert(
+        p.name + "\\n\\nCategory: " + p.category +
+        "\\nPrice: Not verified" +
+        "\\nAvailability: Not verified" +
+        "\\n\\nAdd a verified Star Tech product URL to enable product-specific navigation."
+      );
+    }
+
+    function saveLink(id) {
+      const p = products.find(item => item.id === id);
+      if (!p) return;
+
+      if (!p.url) {
+        alert("This demo item has no verified product or affiliate URL yet. Add your authorized Star Tech affiliate link before sharing.");
+        return;
+      }
+
+      if (!savedLinks.some(item => item.id === id)) savedLinks.push(p);
+      renderSavedLinks();
+      alert("Product link saved for this session.");
+    }
+
+    function renderSavedLinks() {
+      const box = document.getElementById("saved-links");
+      if (!savedLinks.length) {
+        box.innerHTML = '<div class="empty">No links saved in this session.</div>';
+        return;
+      }
+
+      box.innerHTML = savedLinks.map(p => `
+        <div class="list-item">
+          <strong>${p.name}</strong>
+          <div class="muted">${p.url}</div>
+          <button class="btn secondary" onclick="copyLink(${p.id})">Copy Link</button>
+        </div>
+      `).join("");
+    }
+
+    async function copyLink(id) {
+      const p = savedLinks.find(item => item.id === id);
+      if (!p) return;
+      try {
+        await navigator.clipboard.writeText(p.url);
+        alert("Link copied.");
+      } catch {
+        prompt("Copy this link:", p.url);
+      }
+    }
+
+    function shareProduct(id) {
+      const p = products.find(item => item.id === id);
+      if (!p) return;
+      const url = p.url || STAR_TECH_URL;
+      const text = p.name + " — Check Star Tech: " + url;
+
+      if (navigator.share) {
+        navigator.share({title:p.name, text, url}).catch(() => {});
+      } else {
+        prompt("Copy and share this text:", text);
+      }
+    }
+
+    function shareApp() {
+      const url = location.href;
+      if (navigator.share) {
+        navigator.share({title:"AG Affiliate Income", text:"Explore AG Affiliate Income", url}).catch(() => {});
+      } else {
+        prompt("Copy this Mini App URL:", url);
+      }
+    }
+
+    function openStarTech() {
+      window.open(STAR_TECH_URL, "_blank", "noopener,noreferrer");
+    }
+
+    function initTelegram() {
+      const tg = window.Telegram?.WebApp;
+      if (!tg) return;
+
+      tg.ready();
+      tg.expand();
+
+      const user = tg.initDataUnsafe?.user;
+      if (user) {
+        document.getElementById("profile-name").textContent =
+          [user.first_name, user.last_name].filter(Boolean).join(" ") || "Telegram User";
+        document.getElementById("profile-username").textContent =
+          user.username ? "@" + user.username : "Not set";
+        document.getElementById("profile-id").textContent =
+          user.id ? String(user.id) : "Unavailable";
+      }
+    }
+
+    renderChips();
+    renderProducts();
+    renderCategories();
+    initTelegram();
+  </script>
+</body>
+</html>
